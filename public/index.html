@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Valorant Klip İndirici</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, sans-serif; }
+        body { background-color: #0f1923; color: #ece8e1; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
+        .card { background: #1f2326; padding: 35px; border-radius: 8px; border-top: 4px solid #ff4655; width: 100%; max-width: 480px; box-shadow: 0 20px 40px rgba(0,0,0,0.6); text-align: center; }
+        h1 { font-size: 24px; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 8px; }
+        p.subtitle { color: #8b929a; font-size: 13px; margin-bottom: 24px; }
+        input[type="text"], select { width: 100%; padding: 14px; background-color: #0f1923; border: 1px solid #36393f; border-radius: 4px; color: #fff; font-size: 14px; outline: none; margin-bottom: 16px; }
+        input[type="text"]:focus, select:focus { border-color: #ff4655; }
+        button { width: 100%; padding: 14px; background-color: #ff4655; color: #fff; border: none; border-radius: 4px; font-weight: bold; font-size: 14px; text-transform: uppercase; cursor: pointer; transition: 0.2s; }
+        button:hover { background-color: #e03e4d; }
+        button:disabled { background-color: #4a4d52 !important; color: #8b929a !important; cursor: not-allowed; }
+        .option-group { display: none; text-align: left; margin-top: 20px; }
+        label { font-size: 12px; color: #8b929a; text-transform: uppercase; font-weight: bold; display: block; margin-bottom: 6px; }
+        .error-msg { color: #ff4655; font-size: 14px; margin-top: 15px; }
+        .thumb-img { width: 100%; border-radius: 6px; margin-bottom: 15px; border: 1px solid #36393f; }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h1>Klip İndirici</h1>
+        <p class="subtitle">YouTube Valorant video veya Shorts bağlantısını yapıştırın.</p>
+
+        <input type="text" id="youtubeUrl" placeholder="https://www.youtube.com/watch?v=..." />
+        <button id="checkBtn" onclick="fetchFormats()">Kaliteleri Getir</button>
+
+        <div id="optionGroup" class="option-group">
+            <img id="videoThumb" class="thumb-img" src="" alt="Thumbnail" />
+            
+            <label for="qualitySelect">Çözünürlük Seçin:</label>
+            <select id="qualitySelect"></select>
+
+            <button id="downloadBtn" style="background-color: #00da7a; color: #0f1923;" onclick="startDownload()">
+                🎬 Doğrudan Bilgisayara İndir
+            </button>
+        </div>
+
+        <div id="errorArea"></div>
+    </div>
+
+    <script>
+        let currentUrl = '';
+
+        async function fetchFormats() {
+            const urlInput = document.getElementById('youtubeUrl').value.trim();
+            const checkBtn = document.getElementById('checkBtn');
+            const optionGroup = document.getElementById('optionGroup');
+            const errorArea = document.getElementById('errorArea');
+
+            if (!urlInput) {
+                alert('Lütfen bir link girin!');
+                return;
+            }
+
+            currentUrl = urlInput;
+            checkBtn.innerText = 'KALİTELER ARANIYOR...';
+            checkBtn.disabled = true;
+            errorArea.innerText = '';
+            optionGroup.style.display = 'none';
+
+            try {
+                const response = await fetch('/api/formats', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: urlInput })
+                });
+
+                const data = await response.json();
+
+                if (data.qualities && data.qualities.length > 0) {
+                    const select = document.getElementById('qualitySelect');
+                    select.innerHTML = '';
+
+                    data.qualities.forEach(q => {
+                        const opt = document.createElement('option');
+                        opt.value = q;
+                        opt.innerText = `${q}p`;
+                        select.appendChild(opt);
+                    });
+
+                    document.getElementById('videoThumb').src = data.thumbnail;
+                    optionGroup.style.display = 'block';
+                } else {
+                    errorArea.innerHTML = `<p class="error-msg">${data.error || 'Uygun kalite bulunamadı.'}</p>`;
+                }
+            } catch (err) {
+                errorArea.innerHTML = `<p class="error-msg">Sunucuya bağlanılamadı.</p>`;
+            } finally {
+                checkBtn.innerText = 'KALİTELERİ GETİR';
+                checkBtn.disabled = false;
+            }
+        }
+
+        async function startDownload() {
+            const quality = document.getElementById('qualitySelect').value;
+            const downloadBtn = document.getElementById('downloadBtn');
+
+            // 2. İSTEK: Buton yazısı değişir ve tekrar tıklanamaz hale gelir
+            downloadBtn.innerText = '⏳ VİDEO İNDİRİLİYOR, LÜTFEN BEKLEYİN...';
+            downloadBtn.disabled = true;
+
+            try {
+                const response = await fetch('/api/download-file', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: currentUrl, quality: quality })
+                });
+
+                if (!response.ok) {
+                    throw new Error('İndirme başarısız oldu.');
+                }
+
+                // Header'dan orijinal dosya adını alma veya varsayılanı kullanma
+                const disposition = response.headers.get('content-disposition');
+                let fileName = 'valorant_klip.mp4';
+                
+                if (disposition && disposition.includes('filename=')) {
+                    const filenameMatch = disposition.match(/filename="?([^"]+)"?/);
+                    if (filenameMatch && filenameMatch[1]) {
+                        fileName = decodeURIComponent(filenameMatch[1]);
+                    }
+                }
+
+                // 3. İSTEK: Dosyayı orijinal ismiyle tarayıcı indirme çubuğuna tetikleme
+                const blob = await response.blob();
+                const blobUrl = window.URL.createObjectURL(blob);
+                
+                const a = document.createElement('a');
+                a.href = blobUrl;
+                a.download = fileName;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                window.URL.revokeObjectURL(blobUrl);
+
+            } catch (err) {
+                alert('Video indirilirken bir hata oluştu.');
+            } finally {
+                // İşlem bitince buton eski haline döner
+                downloadBtn.innerText = '🎬 DOĞRUDAN BİLGİSAYARA İNDİR';
+                downloadBtn.disabled = false;
+            }
+        }
+    </script>
+
+</body>
+</html>
