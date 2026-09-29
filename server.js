@@ -15,9 +15,9 @@ if (!fs.existsSync(downloadsDir)) {
     fs.mkdirSync(downloadsDir);
 }
 
-// Çerez kullandığımız için istemciyi web ve mweb yapıyoruz
+// web_creator ve mweb istemcileri hem cookies destekler hem de signature engeline takılmaz
 const cookiesPath = path.join(__dirname, 'cookies.txt');
-let YTDLP_ARGS = `--extractor-args "youtube:player_client=web,mweb"`;
+let YTDLP_ARGS = `--extractor-args "youtube:player_client=web_creator,mweb"`;
 
 if (fs.existsSync(cookiesPath)) {
     YTDLP_ARGS += ` --cookies "${cookiesPath}"`;

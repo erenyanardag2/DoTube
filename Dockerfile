@@ -1,15 +1,12 @@
-FROM node:20-slim
+FROM node:18-slim
 
-# Gerekli sistem araçlarını ve Python'u yüklüyoruz
+# ffmpeg, python3 ve yt-dlp kurulumu
 RUN apt-get update && apt-get install -y \
+    ffmpeg \
     python3 \
     python3-pip \
-    ffmpeg \
     curl \
-    && rm -rf /var/lib/apt/lists/*
-
-# yt-dlp'nin en son sürümünü çekiyoruz
-RUN curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp \
+    && curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp \
     && chmod a+rx /usr/local/bin/yt-dlp
 
 WORKDIR /app
