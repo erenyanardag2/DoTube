@@ -15,6 +15,9 @@ if (!fs.existsSync(downloadsDir)) {
     fs.mkdirSync(downloadsDir);
 }
 
+// Ortak yt-dlp parametreleri (YouTube IP engellerini aşmak için Mobil İstemci simülasyonu)
+const YTDLP_ARGS = `--extractor-args "youtube:player_client=android,web" --js-runtimes node`;
+
 // 1. ADIM: Kalite Seçeneklerini Getir
 app.post('/api/formats', (req, res) => {
     const { url } = req.body;
@@ -23,8 +26,7 @@ app.post('/api/formats', (req, res) => {
         return res.status(400).json({ error: 'Geçerli bir URL girin.' });
     }
 
-    // Railway (Linux/Docker) için optimize edilmiş yt-dlp parametresi
-    const command = `yt-dlp --remote-components ejs:github -J "${url}"`;
+    const command = `yt-dlp ${YTDLP_ARGS} -J "${url}"`;
 
     exec(command, { maxBuffer: 1024 * 1024 * 20 }, (error, stdout, stderr) => {
         if (error) {
@@ -64,7 +66,7 @@ app.post('/api/download-file', (req, res) => {
     const timestamp = Date.now();
     const tempFilePath = path.join(downloadsDir, `temp_${timestamp}.mp4`);
 
-    const command = `yt-dlp --remote-components ejs:github -f "bv*[height<=${quality}][ext=mp4]+ba[ext=m4a]/b[height<=${quality}]/best" --concurrent-fragments 5 -o "${tempFilePath}" "${url}"`;
+    const command = `yt-dlp ${YTDLP_ARGS} -f "bv*[height<=${quality}][ext=mp4]+ba[ext=m4a]/b[height<=${quality}]/best" --concurrent-fragments 5 -o "${tempFilePath}" "${url}"`;
 
     console.log(`[Sunucuda İşleniyor] Kalite: ${quality}p | URL: ${url}`);
 
@@ -74,7 +76,7 @@ app.post('/api/download-file', (req, res) => {
             return res.status(500).send('Video hazırlanamadı.');
         }
 
-        const titleCommand = `yt-dlp --get-title "${url}"`;
+        const titleCommand = `yt-dlp ${YTDLP_ARGS} --get-title "${url}"`;
 
         exec(titleCommand, (tErr, tStdout) => {
             let rawTitle = tStdout ? tStdout.trim() : 'valorant_klip';
@@ -100,6 +102,7 @@ app.post('/api/download-file', (req, res) => {
         });
     });
 });
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`🚀 Sunucu Hazır: Port ${PORT}`);
