@@ -18,7 +18,7 @@ if (!fs.existsSync(downloadsDir)) {
 // YouTube Cloud IP engellerini (429/Bot check) aşmak için mobil istemci argümanı
 const YTDLP_ARGS = `--extractor-args "youtube:player_client=ios,android"`;
 
-// 1. ADIM: Kalite Seçeneklerini Getir
+// 1. ADIM: Kalite Seçeneklerini Getir (Tüm çözünürlükler: 1080p, 720p, 480p vs.)
 app.post('/api/formats', (req, res) => {
     const { url } = req.body;
 
@@ -38,6 +38,7 @@ app.post('/api/formats', (req, res) => {
             const info = JSON.parse(stdout);
             const formats = info.formats || [];
 
+            // Sadece video barındıran (vcodec !== 'none') tüm çözünürlükleri yakalıyoruz
             const heights = [...new Set(
                 formats
                     .filter(f => f.height && f.vcodec !== 'none')
