@@ -15,10 +15,15 @@ if (!fs.existsSync(downloadsDir)) {
     fs.mkdirSync(downloadsDir);
 }
 
-// YouTube Cloud IP engellerini (429/Bot check) aşmak için mobil istemci argümanı
-const YTDLP_ARGS = `--extractor-args "youtube:player_client=ios,android"`;
+// Cookies ve İstemci Taklidi İle IP Bloğunu Aşma Argümanları
+const cookiesPath = path.join(__dirname, 'cookies.txt');
+let YTDLP_ARGS = `--extractor-args "youtube:player_client=ios,android"`;
 
-// 1. ADIM: Kalite Seçeneklerini Getir (Tüm çözünürlükler: 1080p, 720p, 480p vs.)
+if (fs.existsSync(cookiesPath)) {
+    YTDLP_ARGS += ` --cookies "${cookiesPath}"`;
+}
+
+// 1. ADIM: Kalite Seçeneklerini Getir (Tüm Çözünürlükler)
 app.post('/api/formats', (req, res) => {
     const { url } = req.body;
 
@@ -38,7 +43,7 @@ app.post('/api/formats', (req, res) => {
             const info = JSON.parse(stdout);
             const formats = info.formats || [];
 
-            // Sadece video barındıran (vcodec !== 'none') tüm çözünürlükleri yakalıyoruz
+            // 1080p, 720p, 480p, 360p gibi tüm çözünürlükleri yakalıyoruz
             const heights = [...new Set(
                 formats
                     .filter(f => f.height && f.vcodec !== 'none')
