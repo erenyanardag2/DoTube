@@ -15,9 +15,9 @@ if (!fs.existsSync(downloadsDir)) {
     fs.mkdirSync(downloadsDir);
 }
 
-// Cookies ve İstemci Taklidi İle IP Bloğunu Aşma Argümanları
+// Çerez kullandığımız için istemciyi web ve mweb yapıyoruz
 const cookiesPath = path.join(__dirname, 'cookies.txt');
-let YTDLP_ARGS = `--extractor-args "youtube:player_client=ios,android"`;
+let YTDLP_ARGS = `--extractor-args "youtube:player_client=web,mweb"`;
 
 if (fs.existsSync(cookiesPath)) {
     YTDLP_ARGS += ` --cookies "${cookiesPath}"`;
