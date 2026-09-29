@@ -15,9 +15,10 @@ if (!fs.existsSync(downloadsDir)) {
     fs.mkdirSync(downloadsDir);
 }
 
-// Ortak yt-dlp parametreleri (YouTube IP engellerini aşmak için Mobil İstemci simülasyonu)
-const YTDLP_ARGS = `--extractor-args "youtube:player_client=android,web" --js-runtimes node`;
+// YouTube Cloud IP engellerini (429/Bot check) aşmak için mobil istemci argümanı
+const YTDLP_ARGS = `--extractor-args "youtube:player_client=ios,android"`;
 
+// 1. ADIM: Kalite Seçeneklerini Getir
 app.post('/api/formats', (req, res) => {
     const { url } = req.body;
 
@@ -25,8 +26,7 @@ app.post('/api/formats', (req, res) => {
         return res.status(400).json({ error: 'Geçerli bir URL girin.' });
     }
 
-    // Mobil istemci emülasyonu ile YouTube 429 IP bloğunu baypas ediyoruz
-    const command = `yt-dlp --extractor-args "youtube:player_client=android,web" -J "${url}"`;
+    const command = `yt-dlp ${YTDLP_ARGS} -J "${url}"`;
 
     exec(command, { maxBuffer: 1024 * 1024 * 20 }, (error, stdout, stderr) => {
         if (error) {
